@@ -108,6 +108,29 @@ function App() {
     }
   };
 
+  const exportAddressesToCSV = () => {
+    if (Object.keys(derivedAddresses).length === 0) return;
+
+    // Create CSV content
+    const csvContent = [
+      ['Chain', 'Address'],
+      ...Object.entries(derivedAddresses).map(([chain, address]) => [chain, address])
+    ].map(row => row.join(',')).join('\n');
+
+    // Create blob and download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'wallet_addresses.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="App">
       <h1>Wallet Core Sign Sample</h1>
@@ -142,7 +165,14 @@ function App() {
       
       {Object.keys(derivedAddresses).length > 0 && (
         <div className="addresses-display bg-black">
+         
           <h2>Derived Addresses:</h2>
+          <button
+            onClick={exportAddressesToCSV}
+            className="export-button"
+          >
+            Export Addresses as CSV
+          </button>
           <div className="addresses-grid">
             {Object.entries(derivedAddresses).map(([chain, address]) => (
               <div key={chain} className="address-item">
@@ -151,6 +181,7 @@ function App() {
               </div>
             ))}
           </div>
+          
         </div>
       )}
       
