@@ -1,0 +1,134 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.mnemonic-display {
+  margin: 20px auto;
+  padding: 15px;
+  max-width: 600px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.mnemonic-display.bg-black {
+  background-color: #000;
+  color: #fff;
+  border-color: #333;
+}
+
+.mnemonic-text {
+  font-family: monospace;
+  font-size: 16px;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  word-spacing: 4px;
+  line-height: 1.5;
+}
+
+.mnemonic-display.bg-black .mnemonic-text {
+  background-color: #111;
+  color: #fff;
+  border-color: #333;
+}
+
+.warning {
+  color: #d9534f;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.mnemonic-display.bg-black .warning {
+  color: #ff6b6b;
+}
+
+.button-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.derive-button {
+  background-color: #4CAF50;
+}
+
+.derive-button:hover {
+  background-color: #45a049;
+}
+
+.addresses-display {
+  margin: 20px auto;
+  padding: 15px;
+  max-width: 800px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background-color: #000;
+  color: #fff;
+}
+
+.addresses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.address-item {
+  background-color: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.address-item h3 {
+  margin-top: 0;
+  color: #4CAF50;
+}
+
+.address-text {
+  font-family: monospace;
+  font-size: 14px;
+  word-break: break-all;
+  margin-bottom: 0;
+}
