@@ -118,7 +118,8 @@
   background-color: #111;
   border: 1px solid #333;
   border-radius: 4px;
-  padding: 10px;
+  padding: 15px;
+  text-align: center;
 }
 
 .address-item h3 {
@@ -131,6 +132,19 @@
   font-size: 14px;
   word-break: break-all;
   margin-bottom: 0;
+}
+
+.qr-code-container {
+  background-color: white;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+  display: inline-block;
+}
+
+.qr-code {
+  display: block;
+  margin: 0 auto;
 }
 
 .export-button {
@@ -147,4 +161,19 @@
 
 .export-button:hover {
   background-color: #1976D2;
+}
+
+.cancel-button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  padding: 10px 20px;
+}
+
+.cancel-button:hover {
+  background-color: #d32f2f;
 }

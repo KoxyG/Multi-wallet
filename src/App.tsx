@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { initWasm } from '@trustwallet/wallet-core';
+import { QRCodeSVG } from 'qrcode.react';
 import './App.css';
 import { TTranx } from './utils/wallet/types';
 import { Wallet } from './utils/wallet';
@@ -33,6 +34,15 @@ function App() {
     }
   };
 
+  const cancelWallet = () => {
+    // Clear all wallet data from memory
+    setMnemonic('');
+    setMnemonicObj(null);
+    setWalletInstance(null);
+    setDerivedAddresses({});
+    console.log('Wallet cleared from memory');
+  };
+
   const deriveAddresses = async () => {
     if (!mnemonicObj || !mnemonic) return;
     
@@ -40,7 +50,6 @@ function App() {
       setIsLoading(true);
       const addresses: Record<string, string> = {};
       
-     
       // Derive addresses for different blockchains
       // Bitcoin
       const btcAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.bitcoin);
@@ -97,9 +106,7 @@ function App() {
       // OM (Mantra) Chain
       const omAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.ethereum);
       addresses['OM (Mantra) Chain'] = omAddress;
-
       
-      // addresses['OM (Mantra) Chain'] = omAddress;
       setDerivedAddresses(addresses);
     } catch (error) {
       console.error('Error deriving addresses', error);
@@ -145,13 +152,21 @@ function App() {
         </button>
         
         {mnemonic && (
-          <button
-            onClick={deriveAddresses}
-            disabled={isLoading}
-            className="derive-button"
-          >
-            {isLoading ? 'Deriving...' : 'Derive Addresses'}
-          </button>
+          <>
+            <button
+              onClick={deriveAddresses}
+              disabled={isLoading}
+              className="derive-button"
+            >
+              {isLoading ? 'Deriving...' : 'Derive Addresses'}
+            </button>
+            <button
+              onClick={cancelWallet}
+              className="cancel-button"
+            >
+              Cancel & Clear Wallet
+            </button>
+          </>
         )}
       </div>
       
@@ -165,7 +180,6 @@ function App() {
       
       {Object.keys(derivedAddresses).length > 0 && (
         <div className="addresses-display bg-black">
-         
           <h2>Derived Addresses:</h2>
           <button
             onClick={exportAddressesToCSV}
@@ -177,11 +191,19 @@ function App() {
             {Object.entries(derivedAddresses).map(([chain, address]) => (
               <div key={chain} className="address-item">
                 <h3>{chain}</h3>
+                <div className="qr-code-container">
+                  <QRCodeSVG
+                    value={address}
+                    size={128}
+                    level="H"
+                    includeMargin={true}
+                    className="qr-code"
+                  />
+                </div>
                 <p className="address-text">{address}</p>
               </div>
             ))}
           </div>
-          
         </div>
       )}
       
