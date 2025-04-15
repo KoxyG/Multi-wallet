@@ -24,8 +24,7 @@ export const useSignInToEthereum = () => {
       
       // Create an ethers.js wallet from the private key
       const wallet = new ethers.Wallet(privateKeyHex);
-      console.log('wallet', wallet);
-      console.log('Ethereum wallet created:', wallet.address);
+      
       
       // Set up a provider to connect to Ethereum network
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -57,13 +56,10 @@ export const useSignInToEthereum = () => {
     try {
       // Sign the message directly with our wallet
       const signature = await wallet.signMessage(message);
-      console.log('Signature:', signature);
+      
       
       // Verify the signature
       const recoveredAddress = ethers.utils.verifyMessage(message, signature);
-      console.log('Recovered address:', recoveredAddress);
-      console.log('Original address:', wallet.address);
-      console.log('Addresses match:', recoveredAddress === wallet.address);
       
       return {
         signature,

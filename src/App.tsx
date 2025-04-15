@@ -135,7 +135,6 @@ function App() {
     setSignature('');
     setRecoveredAddress('');
     setSignedMessage('');
-    console.log('Wallet cleared from memory');
   };
 
   // Format price with appropriate precision

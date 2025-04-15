@@ -14,13 +14,11 @@ export const useCreateWallet = () => {
       const walletCore = await initWasm();
       const wallet = new Wallet(walletCore);
      
-      console.log('wallet', wallet);
+   
       const mnemonicObj = wallet.HDWallet.create(128, "password");
-      console.log('mnemonicObj', mnemonicObj);
+  
       const mnemonicPhrase = mnemonicObj.mnemonic();
-      console.log(mnemonicPhrase);
       
-      console.log('mnemonicObj', mnemonicObj);
       
       return {
         wallet,
