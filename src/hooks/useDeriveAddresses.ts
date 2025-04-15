@@ -18,19 +18,28 @@ export const useDeriveAddresses = () => {
       const addresses: Record<string, string> = {};
       
       // Derive addresses for different blockchains
-      // Bitcoin
-      const btcAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.bitcoin);
-      addresses['Bitcoin'] = btcAddress;
       
       // Ethereum
       const ethAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.ethereum);
       addresses['Ethereum'] = ethAddress;
-      const ethPrivateKey = mnemonicObj.getKeyForCoin(walletInstance.CoinType.ethereum);
-      console.log('ethPrivateKey', ethPrivateKey);
+      const ethPrivateKey = mnemonicObj.getKeyForCoin(walletInstance.CoinType.ethereum); 
+      const privateKeyBytes = ethPrivateKey.data();
+      const privateKeyHex = walletInstance.HexCoding.encode(privateKeyBytes).replace('0x', '');
       
+    
+      // Bitcoin
+      const btcAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.bitcoin);
+      addresses['Bitcoin'] = btcAddress;
+
       // Binance Chain
       const bnbAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.binance);
       addresses['Binance Chain'] = bnbAddress;
+      const bnbPrivateKey = mnemonicObj.getKeyForCoin(walletInstance.CoinType.binance); 
+      const bnbprivateKeyBytes = bnbPrivateKey.data();
+      console.log('bnbprivateKeyBytes', bnbprivateKeyBytes);
+      const bnbprivateKeyHex = walletInstance.HexCoding.encode(bnbprivateKeyBytes).replace('0x', '');
+      console.log('bnbprivateKeyHex', bnbprivateKeyHex);
+      
 
       // Polygon Chain
       const polyAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.polygon);
@@ -78,7 +87,7 @@ export const useDeriveAddresses = () => {
       
       return {
         addresses,
-        ethPrivateKey
+        privateKeyHex
       };
     } catch (error) {
       console.error('Error deriving addresses', error);

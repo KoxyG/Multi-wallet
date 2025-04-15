@@ -56,11 +56,10 @@ function App() {
     
     const result = await deriveAddresses(mnemonicObj, walletInstance);
     if (result) {
-      const { addresses, ethPrivateKey } = result;
+      const { addresses, privateKeyHex } = result;
       setDerivedAddresses(addresses);
       
-      // Convert private key to hex for display
-      const privateKeyHex = walletInstance.HexCoding.encode(ethPrivateKey).replace('0x', '');
+     
       setPrivatekey(privateKeyHex);
     }
   };

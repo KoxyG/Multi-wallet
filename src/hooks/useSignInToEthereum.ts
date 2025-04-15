@@ -16,11 +16,15 @@ export const useSignInToEthereum = () => {
       setIsLoading(true);
       setError(null);
       
-      // Get the private key for Ethereum using the correct method
-      const ethPrivateKey = mnemonicObj.getPrivateKey(walletInstance.CoinType.ethereum);
+      
+      const ethPrivateKey = mnemonicObj.getKeyForCoin(walletInstance.CoinType.ethereum); 
+      const privateKeyBytes = ethPrivateKey.data();
+      const privateKeyHex = walletInstance.HexCoding.encode(privateKeyBytes).replace('0x', '');
+      
       
       // Create an ethers.js wallet from the private key
-      const wallet = new ethers.Wallet(ethPrivateKey);
+      const wallet = new ethers.Wallet(privateKeyHex);
+      console.log('wallet', wallet);
       console.log('Ethereum wallet created:', wallet.address);
       
       // Set up a provider to connect to Ethereum network
