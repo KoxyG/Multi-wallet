@@ -16,8 +16,8 @@ export const useSignInToEthereum = () => {
       setIsLoading(true);
       setError(null);
       
-      
-      const ethPrivateKey = mnemonicObj.getKeyForCoin(walletInstance.CoinType.ethereum); 
+      // Get Ethereum private key
+      const ethPrivateKey = mnemonicObj.getKeyForCoin(walletInstance.CoinType.ethereum);
       const privateKeyBytes = ethPrivateKey.data();
       const privateKeyHex = walletInstance.HexCoding.encode(privateKeyBytes).replace('0x', '');
       
@@ -34,15 +34,17 @@ export const useSignInToEthereum = () => {
       const connectedWallet = wallet.connect(provider);
       
       // Get the balance
-      const balance = await connectedWallet.getBalance();
-      const balanceInEth = ethers.utils.formatEther(balance);
+      const balance = ethers.utils.formatEther(await connectedWallet.getBalance());
       
+      // Return the wallet and balance without signing yet
+      // The actual signing will be handled by the modal
       return {
         wallet: connectedWallet,
-        balance: balanceInEth
+        balance,
+        privateKeyHex
       };
     } catch (error) {
-      console.error('Error signing in to Ethereum:', error);
+      console.error('Error signing in to Ethereum', error);
       setError('Failed to sign in to Ethereum');
       return null;
     } finally {
@@ -50,8 +52,33 @@ export const useSignInToEthereum = () => {
     }
   };
 
+  // Separate function to sign a message with our wallet
+  const signMessage = async (wallet: ethers.Wallet, message: string) => {
+    try {
+      // Sign the message directly with our wallet
+      const signature = await wallet.signMessage(message);
+      console.log('Signature:', signature);
+      
+      // Verify the signature
+      const recoveredAddress = ethers.utils.verifyMessage(message, signature);
+      console.log('Recovered address:', recoveredAddress);
+      console.log('Original address:', wallet.address);
+      console.log('Addresses match:', recoveredAddress === wallet.address);
+      
+      return {
+        signature,
+        recoveredAddress,
+        message
+      };
+    } catch (error) {
+      console.error('Error signing message:', error);
+      throw error;
+    }
+  };
+
   return {
     signInToEthereum,
+    signMessage,
     isLoading,
     error
   };

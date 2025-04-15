@@ -269,3 +269,50 @@
 .toggle-button:hover {
   background-color: #5a5a5a;
 }
+
+.signature-info {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.signature-info h4 {
+  margin-top: 0;
+  color: #4a9eff;
+}
+
+.signed-message {
+  word-break: break-all;
+  font-style: italic;
+  color: #ccc;
+}
+
+.signature {
+  word-break: break-all;
+  font-family: monospace;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 8px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.recovered-address {
+  word-break: break-all;
+  font-family: monospace;
+  color: #a0e0a0;
+}
+
+.verification-result {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.success {
+  color: #4caf50;
+}
+
+.error {
+  color: #f44336;
+}

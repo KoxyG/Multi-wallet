@@ -9,6 +9,7 @@ import {
   useSignInToEthereum, 
   useExportAddresses 
 } from './hooks';
+import SignMessageModal from './components/SignMessageModal';
 
 // Add type declaration for window.ethereum
 declare global {
@@ -26,11 +27,16 @@ function App() {
   const [ethBalance, setEthBalance] = useState<string>('');
   const [privatekey, setPrivatekey] = useState<string>('');
   const [showPrivateKey, setShowPrivateKey] = useState<boolean>(false);
+  const [signature, setSignature] = useState<string>('');
+  const [recoveredAddress, setRecoveredAddress] = useState<string>('');
+  const [signedMessage, setSignedMessage] = useState<string>('');
+  const [isSignModalOpen, setIsSignModalOpen] = useState<boolean>(false);
+  const [walletForSigning, setWalletForSigning] = useState<ethers.Wallet | null>(null);
 
   // Custom hooks
   const { createWallet, isLoading: isCreatingWallet } = useCreateWallet();
   const { deriveAddresses, isLoading: isDerivingAddresses } = useDeriveAddresses();
-  const { signInToEthereum, isLoading: isSigningIn } = useSignInToEthereum();
+  const { signInToEthereum, signMessage, isLoading: isSigningIn } = useSignInToEthereum();
   const { exportAddressesToCSV } = useExportAddresses();
 
   // Combined loading state
@@ -72,6 +78,25 @@ function App() {
       const { wallet, balance } = result;
       setEthereumWallet(wallet);
       setEthBalance(balance);
+      setWalletForSigning(wallet);
+      // Open the sign modal
+      setIsSignModalOpen(true);
+    }
+  };
+
+  const handleSignMessage = async (message: string) => {
+    if (!walletForSigning) return;
+    
+    try {
+      const result = await signMessage(walletForSigning, message);
+      if (result) {
+        const { signature, recoveredAddress, message } = result;
+        setSignature(signature);
+        setRecoveredAddress(recoveredAddress);
+        setSignedMessage(message);
+      }
+    } catch (error) {
+      console.error('Error signing message:', error);
     }
   };
 
@@ -94,7 +119,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Wallet Core Sign</h1>
+      <h1>Multi-Chain Wallet Dashboard</h1>
       <div className="button-container">
         { !Object.keys(derivedAddresses).length && (
           <button
@@ -124,37 +149,13 @@ function App() {
         )}
       </div>
       
-      {mnemonic && !Object.keys(derivedAddresses).length && (
-        <div className="mnemonic-display bg-black">
-          <h2>Your Mnemonic (12 words):</h2>
-          <p className="mnemonic-text">{mnemonic}</p>
-          <p className="warning">⚠️ Keep this mnemonic secure and never share it!</p>
-        </div>
-      )}
+      <SignMessageModal
+        isOpen={isSignModalOpen}
+        onClose={() => setIsSignModalOpen(false)}
+        onSign={handleSignMessage}
+      />
       
-      {privatekey && (
-        <div className="private-key-display bg-black">
-          <div className="private-key-header">
-            <h2>Private Key</h2>
-            <button 
-              onClick={() => setShowPrivateKey(!showPrivateKey)}
-              className="toggle-button"
-            >
-              {showPrivateKey ? 'Hide Private Key' : 'Show Private Key'}
-            </button>
-          </div>
-          
-          {showPrivateKey ? (
-            <>
-              <p className="warning">⚠️ WARNING: Never share your private key with anyone!</p>
-              <p className="private-key-text">{privatekey}</p>
-            </>
-          ) : (
-            <p className="private-key-hidden">Private key is hidden. Click the button above to reveal it.</p>
-          )}
-        </div>
-      )}
-      
+    
       {Object.keys(derivedAddresses).length > 0 && (
         <div className="addresses-display bg-black">
           <h2>Derived Addresses:</h2>
@@ -182,6 +183,20 @@ function App() {
               <h3>Ethereum Wallet Connected</h3>
               <p>Address: {ethereumWallet.address}</p>
               <p>Balance: {ethBalance} ETH</p>
+              
+              {signature && (
+                <div className="signature-info">
+                  <h4>Message Signature</h4>
+                  <p className="signed-message">Message: "{signedMessage}"</p>
+                  <p className="signature">Signature: {signature}</p>
+                  <p className="recovered-address">Recovered Address: {recoveredAddress}</p>
+                  <p className="verification-result">
+                    Verification: {recoveredAddress === ethereumWallet.address ? 
+                      <span className="success">✓ Addresses match</span> : 
+                      <span className="error">✗ Addresses don't match</span>}
+                  </p>
+                </div>
+              )}
             </div>
           )}
           
