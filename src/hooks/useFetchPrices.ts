@@ -15,6 +15,7 @@ const CHAIN_TO_COINGECKO_ID: Record<string, string> = {
   'Sei Chain': 'sei-network',
   'Tron Chain': 'tron',
   'Solana Chain': 'solana',
+  'Stellar': 'stellar',
   'OM (Mantra) Chain': 'mantra' // This might not be available on CoinGecko
 };
 

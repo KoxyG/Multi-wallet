@@ -27,6 +27,7 @@ export const useDeriveAddresses = () => {
       const privateKeyBytes = ethPrivateKey.data();
       const privateKeyHex = walletInstance.HexCoding.encode(privateKeyBytes).replace('0x', '');
       privateKeys['Ethereum'] = privateKeyHex;
+
       
     
       // Bitcoin
@@ -60,6 +61,15 @@ export const useDeriveAddresses = () => {
       const avaxPrivateKeyBytes = avaxPrivateKey.data();
       const avaxPrivateKeyHex = walletInstance.HexCoding.encode(avaxPrivateKeyBytes).replace('0x', '');
       privateKeys['Avalanche Chain'] = avaxPrivateKeyHex;
+
+      // Stellar
+      const stellarAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.stellar);
+      addresses['Stellar'] = stellarAddress;
+      const stellarPrivateKey = mnemonicObj.getKeyForCoin(walletInstance.CoinType.stellar);
+      const stellarPrivateKeyBytes = stellarPrivateKey.data();
+      const stellarPrivateKeyHex = walletInstance.HexCoding.encode(stellarPrivateKeyBytes).replace('0x', '');
+      privateKeys['Stellar'] = stellarPrivateKeyHex;
+
       
       //Fantom Chain
       const fantomAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.fantom);
@@ -101,6 +111,7 @@ export const useDeriveAddresses = () => {
       const suiPrivateKeyHex = walletInstance.HexCoding.encode(suiPrivateKeyBytes).replace('0x', '');
       privateKeys['Sui Chain'] = suiPrivateKeyHex;
 
+      
       // Sei Chain
       const seiAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.sei);
       addresses['Sei Chain'] = seiAddress;
