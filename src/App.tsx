@@ -4,6 +4,15 @@ import { QRCodeSVG } from 'qrcode.react';
 import './App.css';
 import { TTranx } from './utils/wallet/types';
 import { Wallet } from './utils/wallet';
+import { ethers } from 'ethers';
+
+
+// Add type declaration for window.ethereum
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 function App() {
   const [mnemonic, setMnemonic] = useState<string>('');
@@ -11,22 +20,39 @@ function App() {
   const [derivedAddresses, setDerivedAddresses] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mnemonicObj, setMnemonicObj] = useState<any>(null);
+  const [ethereumWallet, setEthereumWallet] = useState<ethers.Wallet | null>(null);
+  const [ethBalance, setEthBalance] = useState<string>('');
+  const [privatekey, setPrivatekey] = useState<string>('');
 
   const createWallet = async () => {
     try {
       setIsLoading(true);
       const walletCore = await initWasm();
       const wallet = new Wallet(walletCore);
+     
+     
       console.log('wallet', wallet);
       const mnemonicObj = wallet.HDWallet.create(128, "password");
+      console.log('mnemonicObj', mnemonicObj);
       const mnemonicPhrase = mnemonicObj.mnemonic();
       console.log(mnemonicPhrase);
       
+      // Create a private key using the PrivateKey constructor
+      const privateKeyObj = wallet.PrivateKey.create(); 
+      // Get the raw private key bytes
+      const privateKeyBytes = privateKeyObj.data();  
+      // Convert to hex string
+      const privateKeyHex = wallet.HexCoding.encode(privateKeyBytes);
+
+      
       // Store in state
       setMnemonic(mnemonicPhrase);
+      setPrivatekey(privateKeyHex);
       setMnemonicObj(mnemonicObj);
       setWalletInstance(wallet);
       setDerivedAddresses({});
+      setEthereumWallet(null);
+      setEthBalance('');
     } catch (error) {
       console.error('Error creating wallet', error);
     } finally {
@@ -40,6 +66,9 @@ function App() {
     setMnemonicObj(null);
     setWalletInstance(null);
     setDerivedAddresses({});
+    setEthereumWallet(null);
+    setPrivatekey('');
+    setEthBalance('');
     console.log('Wallet cleared from memory');
   };
 
@@ -49,6 +78,8 @@ function App() {
     try {
       setIsLoading(true);
       const addresses: Record<string, string> = {};
+
+      
       
       // Derive addresses for different blockchains
       // Bitcoin
@@ -115,6 +146,41 @@ function App() {
     }
   };
 
+  const signInToEthereum = async () => {
+    if (!mnemonicObj || !derivedAddresses['Ethereum']) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Get the private key for Ethereum using the correct method
+      const ethPrivateKey = mnemonicObj.getPrivateKey(walletInstance.CoinType.ethereum);
+      
+      // Create an ethers.js wallet from the private key
+      const wallet = new ethers.Wallet(ethPrivateKey);
+      console.log('Ethereum wallet created:', wallet.address);
+      
+      // Set up a provider to connect to Ethereum network
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      
+      // Connect the wallet to the provider
+      const connectedWallet = wallet.connect(provider);
+      
+      // Get the balance
+      const balance = await connectedWallet.getBalance();
+      const balanceInEth = ethers.utils.formatEther(balance);
+      
+      // Store the wallet and balance in state
+      setEthereumWallet(connectedWallet);
+      setEthBalance(balanceInEth);
+      
+      console.log('Ethereum balance:', balanceInEth, 'ETH');
+    } catch (error) {
+      console.error('Error signing in to Ethereum:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const exportAddressesToCSV = () => {
     if (Object.keys(derivedAddresses).length === 0) return;
 
@@ -140,7 +206,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Wallet Core Sign Sample</h1>
+      <h1>Wallet Core Sign</h1>
       <div className="button-container">
         <button
           onClick={async () => {
@@ -181,12 +247,24 @@ function App() {
       {Object.keys(derivedAddresses).length > 0 && (
         <div className="addresses-display bg-black">
           <h2>Derived Addresses:</h2>
-          <button
-            onClick={exportAddressesToCSV}
-            className="export-button"
-          >
-            Export Addresses as CSV
-          </button>
+          <div className="action-buttons">
+            <button
+              onClick={exportAddressesToCSV}
+              className="export-button"
+            >
+              Export Addresses as CSV
+            </button>
+            
+          </div>
+          
+          {ethereumWallet && (
+            <div className="ethereum-wallet-info">
+              <h3>Ethereum Wallet Connected</h3>
+              <p>Address: {ethereumWallet.address}</p>
+              <p>Balance: {ethBalance} ETH</p>
+            </div>
+          )}
+          
           <div className="addresses-grid">
             {Object.entries(derivedAddresses).map(([chain, address]) => (
               <div key={chain} className="address-item">
@@ -206,8 +284,7 @@ function App() {
           </div>
         </div>
       )}
-      
-      <p className="read-the-docs">Click on the buttons above and check the console</p>
+    
     </div>
   );
 }
