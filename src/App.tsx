@@ -9,6 +9,7 @@ import {
   useSignInToEthereum, 
   useExportAddresses 
 } from './hooks';
+import { useFetchPrices } from './hooks/useFetchPrices';
 import SignMessageModal from './components/SignMessageModal';
 
 // Add type declaration for window.ethereum
@@ -22,6 +23,8 @@ function App() {
   const [mnemonic, setMnemonic] = useState<string>('');
   const [walletInstance, setWalletInstance] = useState<Wallet | null>(null);
   const [derivedAddresses, setDerivedAddresses] = useState<Record<string, string>>({});
+  const [privateKeys, setPrivateKeys] = useState<Record<string, string>>({});
+  const [visiblePrivateKeys, setVisiblePrivateKeys] = useState<Record<string, boolean>>({});
   const [mnemonicObj, setMnemonicObj] = useState<any>(null);
   const [ethereumWallet, setEthereumWallet] = useState<ethers.Wallet | null>(null);
   const [ethBalance, setEthBalance] = useState<string>('');
@@ -38,9 +41,10 @@ function App() {
   const { deriveAddresses, isLoading: isDerivingAddresses } = useDeriveAddresses();
   const { signInToEthereum, signMessage, isLoading: isSigningIn } = useSignInToEthereum();
   const { exportAddressesToCSV } = useExportAddresses();
+  const { prices, isLoading: isLoadingPrices, error: priceError } = useFetchPrices(derivedAddresses);
 
   // Combined loading state
-  const isLoading = isCreatingWallet || isDerivingAddresses || isSigningIn;
+  const isLoading = isCreatingWallet || isDerivingAddresses || isSigningIn || isLoadingPrices;
 
   const handleCreateWallet = async () => {
     const result = await createWallet();
@@ -62,11 +66,16 @@ function App() {
     
     const result = await deriveAddresses(mnemonicObj, walletInstance);
     if (result) {
-      const { addresses, privateKeyHex } = result;
+      const { addresses, privateKeys } = result;
       setDerivedAddresses(addresses);
+      setPrivateKeys(privateKeys);
       
-     
-      setPrivatekey(privateKeyHex);
+      // Initialize all private keys as hidden
+      const initialVisibility: Record<string, boolean> = {};
+      Object.keys(addresses).forEach(chain => {
+        initialVisibility[chain] = false;
+      });
+      setVisiblePrivateKeys(initialVisibility);
     }
   };
 
@@ -104,17 +113,49 @@ function App() {
     exportAddressesToCSV(derivedAddresses);
   };
 
+  const togglePrivateKey = (chain: string) => {
+    setVisiblePrivateKeys(prev => ({
+      ...prev,
+      [chain]: !prev[chain]
+    }));
+  };
+
   const cancelWallet = () => {
     // Clear all wallet data from memory
     setMnemonic('');
     setMnemonicObj(null);
     setWalletInstance(null);
     setDerivedAddresses({});
+    setPrivateKeys({});
+    setVisiblePrivateKeys({});
     setEthereumWallet(null);
     setPrivatekey('');
     setEthBalance('');
     setShowPrivateKey(false);
+    setSignature('');
+    setRecoveredAddress('');
+    setSignedMessage('');
     console.log('Wallet cleared from memory');
+  };
+
+  // Format price with appropriate precision
+  const formatPrice = (price: number) => {
+    if (price >= 1000) {
+      return `$${price.toFixed(2)}`;
+    } else if (price >= 1) {
+      return `$${price.toFixed(3)}`;
+    } else if (price >= 0.01) {
+      return `$${price.toFixed(4)}`;
+    } else {
+      return `$${price.toFixed(8)}`;
+    }
+  };
+
+  // Format 24h change with color
+  const formatChange = (change: number) => {
+    const color = change >= 0 ? '#4caf50' : '#f44336';
+    const sign = change >= 0 ? '+' : '';
+    return <span style={{ color }}>{sign}{change.toFixed(2)}%</span>;
   };
 
   return (
@@ -200,10 +241,25 @@ function App() {
             </div>
           )}
           
+          {priceError && (
+            <div className="price-error">
+              <p>Error fetching prices: {priceError}</p>
+            </div>
+          )}
+          
           <div className="addresses-grid">
             {Object.entries(derivedAddresses).map(([chain, address]) => (
               <div key={chain} className="address-item">
                 <h3>{chain}</h3>
+                
+                {/* Price display */}
+                {prices[chain] && (
+                  <div className="price-info">
+                    <p className="price">{formatPrice(prices[chain].price)}</p>
+                    <p className="change">24h: {formatChange(prices[chain].change24h)}</p>
+                  </div>
+                )}
+                
                 <div className="qr-code-container">
                   <QRCodeSVG
                     value={address}
@@ -214,6 +270,23 @@ function App() {
                   />
                 </div>
                 <p className="address-text">{address}</p>
+                
+                {/* Private Key Toggle */}
+                <div className="private-key-section">
+                  <button 
+                    onClick={() => togglePrivateKey(chain)}
+                    className="toggle-button"
+                  >
+                    {visiblePrivateKeys[chain] ? 'Hide Private Key' : 'Show Private Key'}
+                  </button>
+                  
+                  {visiblePrivateKeys[chain] && (
+                    <div className="private-key-display">
+                      <p className="warning">⚠️ WARNING: Never share your private key with anyone!</p>
+                      <p className="private-key-text">{privateKeys[chain]}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
