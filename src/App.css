@@ -220,3 +220,52 @@
   margin: 5px 0;
   word-break: break-all;
 }
+
+.private-key-display {
+  margin: 20px auto;
+  padding: 15px;
+  max-width: 600px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background-color: #000;
+  color: #fff;
+}
+
+.private-key-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.private-key-text {
+  font-family: monospace;
+  font-size: 14px;
+  padding: 10px;
+  background-color: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.private-key-hidden {
+  font-style: italic;
+  color: #888;
+  text-align: center;
+  padding: 20px;
+}
+
+.toggle-button {
+  background-color: #4a4a4a;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.toggle-button:hover {
+  background-color: #5a5a5a;
+}

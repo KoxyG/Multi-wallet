@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { initWasm } from '@trustwallet/wallet-core';
 import { QRCodeSVG } from 'qrcode.react';
 import './App.css';
-import { TTranx } from './utils/wallet/types';
 import { Wallet } from './utils/wallet';
 import { ethers } from 'ethers';
-
+import { 
+  useCreateWallet, 
+  useDeriveAddresses, 
+  useSignInToEthereum, 
+  useExportAddresses 
+} from './hooks';
 
 // Add type declaration for window.ethereum
 declare global {
@@ -16,48 +19,65 @@ declare global {
 
 function App() {
   const [mnemonic, setMnemonic] = useState<string>('');
-  const [walletInstance, setWalletInstance] = useState<any>(null);
+  const [walletInstance, setWalletInstance] = useState<Wallet | null>(null);
   const [derivedAddresses, setDerivedAddresses] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mnemonicObj, setMnemonicObj] = useState<any>(null);
   const [ethereumWallet, setEthereumWallet] = useState<ethers.Wallet | null>(null);
   const [ethBalance, setEthBalance] = useState<string>('');
   const [privatekey, setPrivatekey] = useState<string>('');
+  const [showPrivateKey, setShowPrivateKey] = useState<boolean>(false);
 
-  const createWallet = async () => {
-    try {
-      setIsLoading(true);
-      const walletCore = await initWasm();
-      const wallet = new Wallet(walletCore);
-     
-     
-      console.log('wallet', wallet);
-      const mnemonicObj = wallet.HDWallet.create(128, "password");
-      console.log('mnemonicObj', mnemonicObj);
-      const mnemonicPhrase = mnemonicObj.mnemonic();
-      console.log(mnemonicPhrase);
-      
-      // Create a private key using the PrivateKey constructor
-      const privateKeyObj = wallet.PrivateKey.create(); 
-      // Get the raw private key bytes
-      const privateKeyBytes = privateKeyObj.data();  
-      // Convert to hex string
-      const privateKeyHex = wallet.HexCoding.encode(privateKeyBytes);
+  // Custom hooks
+  const { createWallet, isLoading: isCreatingWallet } = useCreateWallet();
+  const { deriveAddresses, isLoading: isDerivingAddresses } = useDeriveAddresses();
+  const { signInToEthereum, isLoading: isSigningIn } = useSignInToEthereum();
+  const { exportAddressesToCSV } = useExportAddresses();
 
-      
-      // Store in state
+  // Combined loading state
+  const isLoading = isCreatingWallet || isDerivingAddresses || isSigningIn;
+
+  const handleCreateWallet = async () => {
+    const result = await createWallet();
+    if (result) {
+      const { wallet, mnemonicObj, mnemonicPhrase } = result;
       setMnemonic(mnemonicPhrase);
-      setPrivatekey(privateKeyHex);
       setMnemonicObj(mnemonicObj);
       setWalletInstance(wallet);
       setDerivedAddresses({});
       setEthereumWallet(null);
+      setPrivatekey('');
       setEthBalance('');
-    } catch (error) {
-      console.error('Error creating wallet', error);
-    } finally {
-      setIsLoading(false);
+      setShowPrivateKey(false);
     }
+  };
+
+  const handleDeriveAddresses = async () => {
+    if (!mnemonicObj || !walletInstance) return;
+    
+    const result = await deriveAddresses(mnemonicObj, walletInstance);
+    if (result) {
+      const { addresses, ethPrivateKey } = result;
+      setDerivedAddresses(addresses);
+      
+      // Convert private key to hex for display
+      const privateKeyHex = walletInstance.HexCoding.encode(ethPrivateKey).replace('0x', '');
+      setPrivatekey(privateKeyHex);
+    }
+  };
+
+  const handleSignInToEthereum = async () => {
+    if (!mnemonicObj || !walletInstance) return;
+    
+    const result = await signInToEthereum(mnemonicObj, walletInstance);
+    if (result) {
+      const { wallet, balance } = result;
+      setEthereumWallet(wallet);
+      setEthBalance(balance);
+    }
+  };
+
+  const handleExportAddresses = () => {
+    exportAddressesToCSV(derivedAddresses);
   };
 
   const cancelWallet = () => {
@@ -69,158 +89,27 @@ function App() {
     setEthereumWallet(null);
     setPrivatekey('');
     setEthBalance('');
+    setShowPrivateKey(false);
     console.log('Wallet cleared from memory');
-  };
-
-  const deriveAddresses = async () => {
-    if (!mnemonicObj || !mnemonic) return;
-    
-    try {
-      setIsLoading(true);
-      const addresses: Record<string, string> = {};
-
-      
-      
-      // Derive addresses for different blockchains
-      // Bitcoin
-      const btcAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.bitcoin);
-      addresses['Bitcoin'] = btcAddress;
-      
-      // Ethereum
-      const ethAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.ethereum);
-      addresses['Ethereum'] = ethAddress;
-      
-      // Binance Chain
-      const bnbAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.binance);
-      addresses['Binance Chain'] = bnbAddress;
-
-      // Polygon Chain
-      const polyAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.polygon);
-      addresses['Polygon Chain'] = polyAddress;
-      
-      // Avalanche Chain
-      const avaxAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.avalancheCChain);
-      addresses['Avalanche Chain'] = avaxAddress;
-      
-      //Fantom Chain
-      const fantomAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.fantom);
-      addresses['Fantom Chain'] = fantomAddress;
-
-      // Dogecoin Chain
-      const dogeAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.dogecoin);
-      addresses['Dogecoin'] = dogeAddress;
-
-      // Cosmos Chain
-      const cosmosAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.cosmos);
-      addresses['Cosmos Chain'] = cosmosAddress;
-
-      // Near Chain
-      const nearAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.near);
-      addresses['Near Chain'] = nearAddress;
-
-      // Sui Chain
-      const suiAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.sui);
-      addresses['Sui Chain'] = suiAddress;
-
-      // Sei Chain
-      const seiAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.sei);
-      addresses['Sei Chain'] = seiAddress;
-
-      // Tron Chain
-      const tronAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.tron);
-      addresses['Tron Chain'] = tronAddress;
-
-      // Solana Chain
-      const solanaAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.solana);
-      addresses['Solana Chain'] = solanaAddress;
-
-      // OM (Mantra) Chain
-      const omAddress = mnemonicObj.getAddressForCoin(walletInstance.CoinType.ethereum);
-      addresses['OM (Mantra) Chain'] = omAddress;
-      
-      setDerivedAddresses(addresses);
-    } catch (error) {
-      console.error('Error deriving addresses', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signInToEthereum = async () => {
-    if (!mnemonicObj || !derivedAddresses['Ethereum']) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // Get the private key for Ethereum using the correct method
-      const ethPrivateKey = mnemonicObj.getPrivateKey(walletInstance.CoinType.ethereum);
-      
-      // Create an ethers.js wallet from the private key
-      const wallet = new ethers.Wallet(ethPrivateKey);
-      console.log('Ethereum wallet created:', wallet.address);
-      
-      // Set up a provider to connect to Ethereum network
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      
-      // Connect the wallet to the provider
-      const connectedWallet = wallet.connect(provider);
-      
-      // Get the balance
-      const balance = await connectedWallet.getBalance();
-      const balanceInEth = ethers.utils.formatEther(balance);
-      
-      // Store the wallet and balance in state
-      setEthereumWallet(connectedWallet);
-      setEthBalance(balanceInEth);
-      
-      console.log('Ethereum balance:', balanceInEth, 'ETH');
-    } catch (error) {
-      console.error('Error signing in to Ethereum:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const exportAddressesToCSV = () => {
-    if (Object.keys(derivedAddresses).length === 0) return;
-
-    // Create CSV content
-    const csvContent = [
-      ['Chain', 'Address'],
-      ...Object.entries(derivedAddresses).map(([chain, address]) => [chain, address])
-    ].map(row => row.join(',')).join('\n');
-
-    // Create blob and download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'wallet_addresses.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
     <div className="App">
       <h1>Wallet Core Sign</h1>
       <div className="button-container">
-        <button
-          onClick={async () => {
-            await createWallet();
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Creating...' : 'Create Wallet'}
-        </button>
+        { !Object.keys(derivedAddresses).length && (
+          <button
+            onClick={handleCreateWallet}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creating...' : 'Create Wallet'}
+          </button>
+        )}
         
         {mnemonic && (
           <>
             <button
-              onClick={deriveAddresses}
+              onClick={handleDeriveAddresses}
               disabled={isLoading}
               className="derive-button"
             >
@@ -236,11 +125,34 @@ function App() {
         )}
       </div>
       
-      {mnemonic && (
+      {mnemonic && !Object.keys(derivedAddresses).length && (
         <div className="mnemonic-display bg-black">
           <h2>Your Mnemonic (12 words):</h2>
           <p className="mnemonic-text">{mnemonic}</p>
           <p className="warning">⚠️ Keep this mnemonic secure and never share it!</p>
+        </div>
+      )}
+      
+      {privatekey && (
+        <div className="private-key-display bg-black">
+          <div className="private-key-header">
+            <h2>Private Key</h2>
+            <button 
+              onClick={() => setShowPrivateKey(!showPrivateKey)}
+              className="toggle-button"
+            >
+              {showPrivateKey ? 'Hide Private Key' : 'Show Private Key'}
+            </button>
+          </div>
+          
+          {showPrivateKey ? (
+            <>
+              <p className="warning">⚠️ WARNING: Never share your private key with anyone!</p>
+              <p className="private-key-text">{privatekey}</p>
+            </>
+          ) : (
+            <p className="private-key-hidden">Private key is hidden. Click the button above to reveal it.</p>
+          )}
         </div>
       )}
       
@@ -249,12 +161,21 @@ function App() {
           <h2>Derived Addresses:</h2>
           <div className="action-buttons">
             <button
-              onClick={exportAddressesToCSV}
+              onClick={handleExportAddresses}
               className="export-button"
             >
               Export Addresses as CSV
             </button>
             
+            {derivedAddresses['Ethereum'] && !ethereumWallet && (
+              <button
+                onClick={handleSignInToEthereum}
+                className="eth-signin-button"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Connecting...' : 'Connect to Ethereum'}
+              </button>
+            )}
           </div>
           
           {ethereumWallet && (
@@ -284,7 +205,6 @@ function App() {
           </div>
         </div>
       )}
-    
     </div>
   );
 }
